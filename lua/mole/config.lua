@@ -18,6 +18,9 @@ M.defaults = {
   -- Show vim.notify messages
   notify = true,
 
+  -- Show gutter signs and EOL virtual text on annotated lines
+  virtual_text = false,
+
   -- Picker for resume: "auto" (telescope → snacks → vim.ui.select), "telescope", "snacks", or "select"
   picker = "auto",
 

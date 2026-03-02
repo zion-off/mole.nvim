@@ -70,6 +70,10 @@ function M.start(config)
     require("mole.window").open(config, bufnr)
   end
 
+  local marks = require("mole.marks")
+  marks.apply(config, M.state)
+  marks.setup_autocmds(config, M.state)
+
   notify(config, "Mole session started", vim.log.levels.INFO)
 end
 
@@ -78,6 +82,8 @@ function M.stop(config)
     notify(config, "No active mole session", vim.log.levels.WARN)
     return
   end
+
+  require("mole.marks").teardown()
 
   local window = require("mole.window")
   window.close()
@@ -138,6 +144,10 @@ function M.resume(config, file_path)
   if config.auto_open_panel then
     require("mole.window").open(config, bufnr)
   end
+
+  local marks = require("mole.marks")
+  marks.apply(config, M.state)
+  marks.setup_autocmds(config, M.state)
 
   notify(config, "Mole session resumed", vim.log.levels.INFO)
 end

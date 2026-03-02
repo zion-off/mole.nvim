@@ -13,10 +13,11 @@ code annotation sessions for neovim. select code, jot a note, and build a markdo
 1. start a session — a markdown file is created and shown in a side panel
 2. select code in visual mode and hit the annotate keybinding
 3. an inline popup appears — type your note and press `<CR>` to save, `<Esc>` to cancel
-4. annotations are appended to the session file as a markdown list -- hit `<CR>` on an annotation in the side panel to jump to that location in your code
+   - press `<C-e>` to expand into a full multiline floating buffer — confirms with `<C-CR>` or `<leader><CR>`
+4. annotations are appended to the session file as a numbered markdown list — hit `<CR>` on an annotation in the side panel to jump to that location in your code
 5. stop the session when you're done
 
-each annotation records the file path and line range. press `<Tab>` in the input popup to toggle between **location** mode (reference only) and **snippet** mode (includes the selected code in a fenced block).
+each annotation records the file path and line range. press `<Tab>` in either input mode to toggle between **location** mode (reference only) and **snippet** mode (includes the selected code in a fenced block).
 
 ## requirements
 
@@ -90,6 +91,9 @@ require("mole").setup({
   -- show vim.notify messages
   notify = true,
 
+  -- show numbered gutter signs and EOL virtual text on annotated lines (opt-in)
+  virtual_text = false,
+
   -- picker for resume: "auto" (telescope → snacks → vim.ui.select), "telescope", "snacks", or "select"
   picker = "auto",
 
@@ -114,6 +118,7 @@ require("mole").setup({
   input = {
     width = 50,
     border = "rounded",
+    expand_key = "<C-e>", -- expand to a multiline floating buffer
   },
 
   -- callbacks that return lines written to the session file
@@ -159,35 +164,50 @@ require("mole").setup({
 
 ## commands & keybindings
 
-| command / key    | mode       | description                    |
-| ---------------- | ---------- | ------------------------------ |
-| `:MoleStart`     | normal     | start a new annotation session |
-| `:MoleStop`      | normal     | stop the current session       |
-| `:MoleResume`    | normal     | resume a previous session      |
-| `:MoleToggle`    | normal     | toggle the side panel          |
-| `<leader>ma`     | visual     | annotate the current selection |
-| `<CR>` / `gd`    | side panel | jump to annotation location    |
-| `]a`             | side panel | next annotation                |
-| `[a`             | side panel | previous annotation            |
+| command / key           | mode        | description                              |
+| ----------------------- | ----------- | ---------------------------------------- |
+| `:MoleStart`            | normal      | start a new annotation session           |
+| `:MoleStop`             | normal      | stop the current session                 |
+| `:MoleResume`           | normal      | resume a previous session                |
+| `:MoleToggle`           | normal      | toggle the side panel                    |
+| `<leader>ma`            | visual      | annotate the current selection           |
+| `<Tab>`                 | input popup | toggle location / snippet mode           |
+| `<C-e>`                 | input popup | expand to multiline floating buffer      |
+| `<C-CR>` / `<leader><CR>` | expanded  | save note                                |
+| `<Esc>` / `q`           | expanded    | cancel                                   |
+| `<CR>` / `gd`           | side panel  | jump to annotation location              |
+| `]a`                    | side panel  | next annotation                          |
+| `[a`                    | side panel  | previous annotation                      |
 
 ## output format
 
-annotations are saved as markdown. in **location** mode:
+annotations are saved as a numbered markdown list. in **location** mode:
 
 ```markdown
-- **`src/main.lua:12-18`** — TODO: refactor this loop
+1. **`src/main.lua:12-18`** — TODO: refactor this loop
 ```
 
 in **snippet** mode:
 
 ````markdown
-- **`src/main.lua:12-18`** — TODO: refactor this loop
-  ```lua
-  for i = 1, #items do
-    process(items[i])
-  end
-  ```
+2. **`src/main.lua:12-18`** — TODO: refactor this loop
+   ```lua
+   for i = 1, #items do
+     process(items[i])
+   end
+   ```
 ````
+
+multiline notes (from the expanded input) are written as continuation paragraphs:
+
+```markdown
+3. **`src/main.lua:42`**
+
+   first line of the note
+   second line
+```
+
+when `virtual_text = true`, each annotated line in the source buffer shows its annotation number in the gutter and a short note preview at the end of the line.
 
 session files are stored in `~/.local/share/nvim/mole/` by default (follows XDG via `stdpath("data")`).
 
