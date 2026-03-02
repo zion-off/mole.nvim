@@ -11,10 +11,18 @@ function M.append(session_state, capture_mode, selection, note)
   end
 
   local lines = { "" }
-  if note ~= "" then
-    table.insert(lines, string.format("- **%s** — %s", location, note))
+  local note_lines = note ~= "" and vim.split(note, "\n") or {}
+
+  if #note_lines == 0 then
+    table.insert(lines, string.format("- **%s**", location))
+  elseif #note_lines == 1 then
+    table.insert(lines, string.format("- **%s** — %s", location, note_lines[1]))
   else
     table.insert(lines, string.format("- **%s**", location))
+    table.insert(lines, "")
+    for _, nl in ipairs(note_lines) do
+      table.insert(lines, nl ~= "" and ("  " .. nl) or "")
+    end
   end
 
   if capture_mode == "snippet" and selection.text then

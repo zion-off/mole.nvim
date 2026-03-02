@@ -42,6 +42,7 @@ M.defaults = {
   input = {
     width = 50,
     border = "rounded",
+    expand_key = "<C-e>",
   },
 
   -- Callback functions that return the lines written to the session file
