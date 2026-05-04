@@ -107,19 +107,32 @@ function M.annotate()
     if note ~= nil then
       -- If mode was toggled to "snippet" but we didn't capture text yet, grab it now
       if mode == "snippet" and not selection.text then
-        selection.text =
-          M._get_visual_text(selection.start_line, selection.start_col, selection.end_line, selection.end_col)
+        selection.text = M._get_visual_text(
+          selection.bufnr,
+          selection.start_line,
+          selection.start_col,
+          selection.end_line,
+          selection.end_col,
+          selection.visual_mode
+        )
       end
       require("mole.writer").append(session.state, mode, selection, note)
     end
   end)
 end
 
-function M._get_visual_text(start_line, start_col, end_line, end_col)
-  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+function M._get_visual_text(bufnr, start_line, start_col, end_line, end_col, visual_mode)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, start_line - 1, end_line, false)
   if #lines == 0 then
     return ""
   end
+
+  -- Linewise visual mode: return full lines, no column slicing
+  if visual_mode == "V" then
+    return table.concat(lines, "\n")
+  end
+
+  -- Characterwise visual mode: slice columns
   if #lines == 1 then
     return lines[1]:sub(start_col + 1, end_col + 1)
   end
@@ -131,14 +144,17 @@ end
 function M._capture_selection()
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "x", false)
 
-  local start_pos = vim.api.nvim_buf_get_mark(0, "<")
-  local end_pos = vim.api.nvim_buf_get_mark(0, ">")
+  local bufnr = vim.api.nvim_get_current_buf()
+  local visual_mode = vim.fn.visualmode()
+
+  local start_pos = vim.api.nvim_buf_get_mark(bufnr, "<")
+  local end_pos = vim.api.nvim_buf_get_mark(bufnr, ">")
   local start_line = start_pos[1]
   local start_col = start_pos[2]
   local end_line = end_pos[1]
   local end_col = end_pos[2]
 
-  local file = vim.api.nvim_buf_get_name(0)
+  local file = vim.api.nvim_buf_get_name(bufnr)
   local relative_file = vim.fn.fnamemodify(file, ":~:.")
 
   local result = {
@@ -147,12 +163,14 @@ function M._capture_selection()
     start_col = start_col,
     end_line = end_line,
     end_col = end_col,
-    filetype = vim.bo.filetype,
+    filetype = vim.bo[bufnr].filetype,
+    bufnr = bufnr,
+    visual_mode = visual_mode,
   }
 
   -- Pre-capture text if default mode is "snippet"
   if M.config.capture_mode == "snippet" then
-    result.text = M._get_visual_text(start_line, start_col, end_line, end_col)
+    result.text = M._get_visual_text(bufnr, start_line, start_col, end_line, end_col, visual_mode)
   end
 
   return result
